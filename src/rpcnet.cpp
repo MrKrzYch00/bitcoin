@@ -171,14 +171,15 @@ Value addnode(const Array& params, bool fHelp)
     if (params.size() == 2)
         strCommand = params[1].get_str();
     if (fHelp || params.size() != 2 ||
-        (strCommand != "onetry" && strCommand != "add" && strCommand != "remove"))
+        (strCommand != "onetry" && strCommand != "add" && strCommand != "remove" && strCommand != "ban"))
         throw runtime_error(
-            "addnode \"node\" \"add|remove|onetry\"\n"
+            "addnode \"node\" \"add|remove|onetry|ban\"\n"
             "\nAttempts add or remove a node from the addnode list.\n"
-            "Or try a connection to a node once.\n"
+            "Try a connection to a node once.\n"
+            "Or ban connected node.\n
             "\nArguments:\n"
             "1. \"node\"     (string, required) The node (see getpeerinfo for nodes)\n"
-            "2. \"command\"  (string, required) 'add' to add a node to the list, 'remove' to remove a node from the list, 'onetry' to try a connection to the node once\n"
+            "2. \"command\"  (string, required) 'add' to add a node to the list, 'remove' to remove a node from the list, 'onetry' to try a connection to the node once, 'ban' to ban connected node\n"
             "\nExamples:\n"
             + HelpExampleCli("addnode", "\"192.168.0.6:8333\" \"onetry\"")
             + HelpExampleRpc("addnode", "\"192.168.0.6:8333\", \"onetry\"")
@@ -191,6 +192,17 @@ Value addnode(const Array& params, bool fHelp)
         CAddress addr;
         OpenNetworkConnection(addr, NULL, strNode.c_str());
         return Value::null;
+    }
+    else if(strCommand == "ban")
+    {
+       CNode* pnode = FindNode(strNode);
+       if(pnode) {
+        CNode::Ban(pnode->addr);
+        pnode->CloseSocketDisconnect();
+       } else {
+        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Error: Node is not connected.");
+       }
+       return Value::null;
     }
 
     LOCK(cs_vAddedNodes);
